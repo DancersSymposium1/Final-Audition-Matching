@@ -32,7 +32,7 @@ class Dancer(object):
 
 	def __repr__(self):
 		return "%d %s %s %s %s %s" % (self.audition_number, ";", 
-										self.first_name, self.last_name, ";", self.email)
+			self.first_name, self.last_name, ";", self.email)
 
 # Gender constraint: if non-empty, dict with key: 'M'/'F' with val: int to indicate gender
 # constraint, else: no constraint preferred
@@ -95,8 +95,8 @@ def csvToPieces(choreographerPrefFile):
 def csvToDancers(dancerPrefsFile, signInFile):
 	dancerInfo = open(signInFile, 'r')
 	dancerInfoHeaders = ['time', 'audition_number', 
-						'last_name', 'first_name', 'class', 
-						'email', 'num_semesters', 'phone']
+				'last_name', 'first_name', 'class', 
+				'email', 'num_semesters', 'phone']
 	contactMap = {}
 
 	for i,line in enumerate(dancerInfo):
@@ -135,8 +135,8 @@ def csvToDancers(dancerPrefsFile, signInFile):
 		(email, phone) = contactMap.get(audition_number, ('no email', 'no phone'))
 
 		dancerMap[audition_number] = Dancer(first_name, last_name, 
-											audition_number, gender, num_pieces, 
-											piece_rankings, email, phone)
+									audition_number, gender, num_pieces, 
+									piece_rankings, email, phone)
 	dancerRankings.close()
 
 	return dancerMap
