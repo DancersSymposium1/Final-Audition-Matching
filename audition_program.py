@@ -3,7 +3,8 @@
 # Run: python audition_program.py <choreo-rankings.cvs> <dancer-rankings.csv> <sign-in.csv>
 # TO-DO: Add possibility of gender constraints
 # TO-DO: Clean up style (documentation, inputs/return types, variable names (camelCase))
-# TO-DO: Add README with file formats (+ trouble-shooting: make sure no commas in .csv files)
+# TO-DO: Add README with file formats (+ trouble-shooting: make sure no commas in .csv files,
+# check for non-ASCII characters/parenthesis in names)
 
 import argparse, csv
 
