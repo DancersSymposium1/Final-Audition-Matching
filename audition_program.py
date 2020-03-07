@@ -1,10 +1,10 @@
 # Modification of Gale-Shapley algorithm to match dancers into pieces 
 # based on mutual preferences
 # Run: python audition_program.py <choreo-rankings.cvs> <dancer-rankings.csv> <sign-in.csv>
+# Ensure there's a directory "piece_assignments" to put assignments in
 # TO-DO: Add possibility of gender constraints
 # TO-DO: Clean up style (documentation, inputs/return types, variable names (camelCase))
-# TO-DO: Add README with file formats (+ trouble-shooting: make sure no commas in .csv files,
-# check for non-ASCII characters/parenthesis in names)
+# TO-DO: Add README with file formats (+ trouble-shooting: make sure no commas in .csv files)
 
 import argparse, csv
 
@@ -66,7 +66,7 @@ def csvToPieces(choreographerPrefFile):
 		if i == 0: continue
 
 		column = line.strip().split(',')
-		piece_id = int(column[choreoPrefsHeaders.index('id')])
+		piece_id = (column[choreoPrefsHeaders.index('id')])
 		name = column[choreoPrefsHeaders.index('name')]
 		total = int(column[choreoPrefsHeaders.index('total')])
 		num_males = int(column[choreoPrefsHeaders.index('num_males')])
@@ -130,7 +130,7 @@ def csvToDancers(dancerPrefsFile, signInFile):
 		ranking_tuples = [(piece, int(ranking)) 
 			for piece,ranking in enumerate(preferences) if ranking != ""]
 		sorted_rankings = sorted(ranking_tuples, key=lambda tup: tup[1])
-		piece_rankings = [(dance_index+1, ranking) 
+		piece_rankings = [(str(dance_index+1), ranking) 
 			for (dance_index, ranking) in sorted_rankings]
 
 		(email, phone) = contactMap.get(audition_number, ('no email', 'no phone'))
@@ -151,6 +151,7 @@ def checkIfPieceRankedDancer(piece, dancer):
 	return False
 
 # return dancer's least fave piece (worstID, worstRank)
+# note: (piece, rank) = (x, int)
 def findWorstPiece(dancer):
 	worstRank = 0
 	worstID = None
@@ -158,6 +159,11 @@ def findWorstPiece(dancer):
 	for (piece, rank) in dancer.piece_rankings:
 		if piece in dancer.pieces and rank > worstRank:
 			worstID, worstRank = piece, rank
+		if (piece + "M") in dancer.pieces and rank > worstRank:
+			worstID, worstRank = (piece + "M"), rank
+		if (piece + "F") in dancer.pieces and rank > worstRank:
+			worstID, worstRank = (piece + "F"), rank
+	
 	return (worstID, worstRank)
 
 # check if a dancer wants to add this piece to their pieces 
@@ -168,11 +174,18 @@ def findWorstPiece(dancer):
 def checkCanAddDancerToPiece(piece, dancer):
 	# possible piece: (piece, rank)
 	# gets rank of current piece in dancer's rankings
-	pieceRank = -1
+	pieceRank = 1000
+	actual_piece = piece.piece_id
+	if 'F' in actual_piece or 'M' in actual_piece:
+		actual_piece = actual_piece[:-1]
+
 	for possiblePiece in dancer.piece_rankings:
-		if possiblePiece[0] == piece.piece_id:
+		if possiblePiece[0] == actual_piece:
 			pieceRank = possiblePiece[1]
 			break
+
+	if pieceRank == 1000:
+		return (False, None, None)
 
 	# check if dancer has room to add
 	if len(dancer.pieces) < dancer.num_pieces:
