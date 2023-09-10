@@ -112,7 +112,7 @@ def csvToDancers(dancerPrefsFile, signInFile):
 	dancerInfo.close()
 
 	dancerRankings = open(dancerPrefsFile, 'r')
-	dancerRankingsHeaders = ['time', 'first_name', 'last_name', 
+	dancerRankingsHeaders = ['time', 'email', 'first_name', 'last_name', 
 							'audition_number', 'gender', 'num_pieces']
 	dancerMap = {}
 
@@ -126,7 +126,7 @@ def csvToDancers(dancerPrefsFile, signInFile):
 		gender = column[dancerRankingsHeaders.index('gender')]
 		num_pieces = int(column[dancerRankingsHeaders.index('num_pieces')])
 
-		preferences = column[len(dancerRankingsHeaders):-1]
+		preferences = column[len(dancerRankingsHeaders):]
 		ranking_tuples = [(piece, int(ranking)) 
 			for piece,ranking in enumerate(preferences) if ranking != ""]
 		sorted_rankings = sorted(ranking_tuples, key=lambda tup: tup[1])
@@ -226,6 +226,7 @@ def checkAllProposed(pieces):
 				return False
 
 	# all pieces filled + unfilled pieces proposed to all
+
 	return True
 
 # outputs pieces to .txt files
