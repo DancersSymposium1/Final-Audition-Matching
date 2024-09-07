@@ -1,12 +1,13 @@
 # Modification of Gale-Shapley algorithm to match dancers into pieces 
 # based on mutual preferences
-# Run: python audition_program.py <choreo-rankings.cvs> <dancer-rankings.csv> <sign-in.csv>
+
+# Run: python audition_program.py <choreo-rankings.csv> <dancer-rankings.csv> <sign-in.csv>
 # Ensure there's a directory "piece_assignments" to put assignments in
-# TO-DO: Add possibility of gender constraints
+
 # TO-DO: Clean up style (documentation, inputs/return types, variable names (camelCase))
 # TO-DO: Add README with file formats (+ trouble-shooting: make sure no commas in .csv files)
 
-import argparse, csv
+import argparse
 
 printOUT_PATH = 'piece_assignments/'
 parser = argparse.ArgumentParser()
@@ -18,13 +19,12 @@ args = parser.parse_args()
 # Piece rankings: list of tuples (piece ID, dancer's ranking), sorted by dancer's ranking
 # Pieces: set of pieces dancer is in with capacity num_pieces
 class Dancer(object):
-	def __init__(self, first_name, last_name, audition_number, 
-				gender, num_pieces, piece_rankings, email, phone):
+	def __init__(self, first_name, last_name, audition_number, pronouns, num_pieces, piece_rankings, email, phone):
 
 		self.first_name = first_name
 		self.last_name = last_name
 		self.audition_number = audition_number
-		self.gender = gender
+		self.pronouns = pronouns
 		self.num_pieces = num_pieces
 		self.piece_rankings = piece_rankings
 		self.email = email
@@ -32,23 +32,19 @@ class Dancer(object):
 		self.pieces = {}
 
 	def __repr__(self):
-		return "%d %s %s %s %s %s" % (self.audition_number, ";", 
-			self.first_name, self.last_name, ";", self.email)
+		return f"{self.audition_number} ; {self.first_name} {self.last_name} ; {self.pronouns} ; {self.email}"
 
-# Gender constraint: if non-empty, dict with key: 'M'/'F' with val: int to indicate gender
-# constraint, else: no constraint preferred
 # Dancer rankings: dict of choreorapher's dancer preferences, key: dancer ID, val: 
 # choreographer's dancer preference (rank)
 # Dancers: set of dancers currently in piece
-# Alternates: set of dancers who may later join the piece (in the case of gender constraints)
+# Alternates: set of dancers who may later join the piece 
 class Piece(object):
 	def __init__(self, piece_id, choreographer_name, 
-				capacity, gender_constraint, dancer_rankings):
+				 capacity, dancer_rankings):
 
 		self.piece_id = piece_id
 		self.choreographer_name = choreographer_name
 		self.capacity = capacity
-		self.gender_constraint = gender_constraint
 		self.dancer_rankings = dancer_rankings
 		self.dancers = {}
 		self.alternates = {}
@@ -59,7 +55,7 @@ class Piece(object):
 #turns CSV into map of pieces (key: piece id (1,2,...), val: Piece object)
 def csvToPieces(choreographerPrefFile):
 	choreoPrefs = open(choreographerPrefFile, 'r')
-	choreoPrefsHeaders = ['id', 'name', 'total', 'num_males', 'num_females']
+	choreoPrefsHeaders = ['id', 'name', 'total']
 	pieceMap = {}
 
 	for i, line in enumerate(choreoPrefs):
@@ -69,14 +65,8 @@ def csvToPieces(choreographerPrefFile):
 		piece_id = (column[choreoPrefsHeaders.index('id')])
 		name = column[choreoPrefsHeaders.index('name')]
 		total = int(column[choreoPrefsHeaders.index('total')])
-		num_males = int(column[choreoPrefsHeaders.index('num_males')])
-		num_females = int(column[choreoPrefsHeaders.index('num_females')])
 
-		gender_constraint = {}
-		if num_males + num_females == total:
-			gender_constraint['F'] = num_females
-			gender_constraint['M'] = num_males
-
+	
 		preferences = column[len(choreoPrefsHeaders):]
 		rankings = {} #rank is 0 if definite, >1 if alternate
 		for rank, audition_num in enumerate(preferences):
@@ -86,7 +76,7 @@ def csvToPieces(choreographerPrefFile):
 				rankings[int(audition_num)] = 0
 			else:
 				rankings[int(audition_num)] = rank - total +1
-		pieceMap[piece_id]  = Piece(piece_id, name, total, gender_constraint, rankings)
+		pieceMap[piece_id]  = Piece(piece_id, name, total, rankings)
 
 	choreoPrefs.close()
 
@@ -113,7 +103,7 @@ def csvToDancers(dancerPrefsFile, signInFile):
 
 	dancerRankings = open(dancerPrefsFile, 'r')
 	dancerRankingsHeaders = ['time', 'email', 'first_name', 'last_name', 
-							'audition_number', 'gender', 'num_pieces']
+							'audition_number', 'pronouns','num_pieces']
 	dancerMap = {}
 
 	for i,line in enumerate(dancerRankings):
@@ -123,7 +113,7 @@ def csvToDancers(dancerPrefsFile, signInFile):
 		first_name = column[dancerRankingsHeaders.index('first_name')]
 		last_name = column[dancerRankingsHeaders.index('last_name')]
 		audition_number = int(column[dancerRankingsHeaders.index('audition_number')])
-		gender = column[dancerRankingsHeaders.index('gender')]
+		pronouns = column[dancerRankingsHeaders.index('pronouns')]
 		num_pieces = int(column[dancerRankingsHeaders.index('num_pieces')])
 
 		preferences = column[len(dancerRankingsHeaders):]
@@ -136,7 +126,7 @@ def csvToDancers(dancerPrefsFile, signInFile):
 		(email, phone) = contactMap.get(audition_number, ('no email', 'no phone'))
 
 		dancerMap[audition_number] = Dancer(first_name, last_name, 
-									audition_number, gender, num_pieces, 
+									audition_number, pronouns, num_pieces, 
 									piece_rankings, email, phone)
 	dancerRankings.close()
 
@@ -159,10 +149,6 @@ def findWorstPiece(dancer):
 	for (piece, rank) in dancer.piece_rankings:
 		if piece in dancer.pieces and rank > worstRank:
 			worstID, worstRank = piece, rank
-		if (piece + "M") in dancer.pieces and rank > worstRank:
-			worstID, worstRank = (piece + "M"), rank
-		if (piece + "F") in dancer.pieces and rank > worstRank:
-			worstID, worstRank = (piece + "F"), rank
 	
 	return (worstID, worstRank)
 
@@ -176,8 +162,6 @@ def checkCanAddDancerToPiece(piece, dancer):
 	# gets rank of current piece in dancer's rankings
 	pieceRank = 1000
 	actual_piece = piece.piece_id
-	if 'F' in actual_piece or 'M' in actual_piece:
-		actual_piece = actual_piece[:-1]
 
 	for possiblePiece in dancer.piece_rankings:
 		if possiblePiece[0] == actual_piece:
@@ -273,11 +257,7 @@ def makeUnassigned(dancers):
 	for dancerID in dancers:
 		dancer = dancers[dancerID]
 		if len(dancer.pieces) == 0:
-			unassignedFile.write('%d\t%s\t%s\t%s\t%s\n' % (dancer.audition_number,
-                                                dancer.first_name + " " + dancer.last_name,
-                                                dancer.gender,
-                                                dancer.email,
-                                                dancer.phone))
+			unassignedFile.write(f"{dancer.audition_number}, {dancer.first_name} {dancer.last_name}, {dancer.email}, {dancer.phone}\n")
 
 	unassignedFile.close()
 	return
@@ -296,6 +276,10 @@ def main():
 				if dancerID != None:
 
 					#print dancerID
+					if dancerID not in dancers:
+						print(f"Erorr: dancer ID {dancerID} is invalid.")
+						piece.dancer_rankings.pop(dancerID)
+						continue
 					dancer = dancers[dancerID]
 
 					# check if dancer accepts proposal
