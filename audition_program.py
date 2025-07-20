@@ -1,5 +1,4 @@
-# Modification of Gale-Shapley algorithm to match dancers into pieces 
-# based on mutual preferences
+# Modification of Gale-Shapley algorithm to match dancers into pieces based on mutual preferences
 
 # Run: python audition_program.py <choreo-rankings.csv> <dancer-rankings.csv> <sign-in.csv>
 # Ensure there's a directory "piece_assignments" to put assignments in

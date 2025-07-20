@@ -1,5 +1,9 @@
 import pandas as pd
 
+'''
+    This code is in progress and is not currently used on audition day. More thorough testing and integration into variations in csv format are needed.
+    Last updated: Spring 2025, though not used
+'''
 
 def checkChoreoRankings(file):
     pass
