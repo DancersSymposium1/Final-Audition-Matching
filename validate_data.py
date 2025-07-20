@@ -5,7 +5,7 @@ def checkChoreoRankings(file):
     pass
 
 def checkDancerRankings(file):
-    pieces = [chr(ord("A")+i) for i in range(20) if i!=3 ]
+    pieces = [chr(ord("A")+i) for i in range(16)if i!=8]
     headers = ["timestamp", "email","first_name","last_name","audition_id","pronouns","num_dances"] + pieces
     df = pd.read_csv(file)
     df.columns = headers
@@ -30,6 +30,8 @@ def checkDancerRankings(file):
             print(f"error: pronouns invalid: {pronouns}")
     #TODO: check if dancer is choreographer to see if num_dances is valid
             #check if dancer is in tap piece to check if num_dances valid
+
+    print("Dancer rankings look good!")
 
 
 def checkSignIn(file):
@@ -57,6 +59,21 @@ def checkSignIn(file):
             print(f"error: phone number is empty")
 
 
-    print("done... looks good!")
+    print("Sign In sheet looks good!")
 
-checkDancerRankings("dancer_prefs_morning.csv")
+def check_consistent_ids(sign_in, rankings):
+    sign_in_headers = ["timestamp", "audition_id", "last_name", "first_name", "class_year", "email", "num_semesters", "phone_number"]
+    sign_in_df = pd.read_csv(sign_in)
+    sign_in_df.columns = sign_in_headers
+    
+    rankings_headers = ['time', 'email', 'first_name', 'last_name', 
+							'audition_number', 'pronouns','num_pieces',"A","B","C","D","E","F","G","H","J","K","L","M","N","O","P"]
+    rankings_df = pd.read_csv(rankings)
+    rankings_df.columns = rankings_headers
+    
+    rank_numbers = rankings_df["audition_number"]
+    sign_in_numbers = sign_in_df["audition_id"]
+    print(rank_numbers,sign_in_numbers)
+
+
+checkDancerRankings("dancer_prefs.csv")

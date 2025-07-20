@@ -19,12 +19,11 @@ args = parser.parse_args()
 # Piece rankings: list of tuples (piece ID, dancer's ranking), sorted by dancer's ranking
 # Pieces: set of pieces dancer is in with capacity num_pieces
 class Dancer(object):
-	def __init__(self, first_name, last_name, audition_number, pronouns, num_pieces, piece_rankings, email, phone):
+	def __init__(self, first_name, last_name, audition_number, num_pieces, piece_rankings, email, phone):
 
 		self.first_name = first_name
 		self.last_name = last_name
 		self.audition_number = audition_number
-		self.pronouns = pronouns
 		self.num_pieces = num_pieces
 		self.piece_rankings = piece_rankings
 		self.email = email
@@ -32,7 +31,7 @@ class Dancer(object):
 		self.pieces = {}
 
 	def __repr__(self):
-		return f"{self.audition_number} ; {self.first_name} {self.last_name} ; {self.pronouns} ; {self.email}"
+		return f"{self.audition_number} ; {self.first_name} {self.last_name} ; {self.email}"
 
 # Dancer rankings: dict of choreorapher's dancer preferences, key: dancer ID, val: 
 # choreographer's dancer preference (rank)
@@ -84,10 +83,10 @@ def csvToPieces(choreographerPrefFile):
 
 #turns CSV into map of dancers (key: audition num, val: Dancer object)
 def csvToDancers(dancerPrefsFile, signInFile):
-	dancerInfo = open(signInFile, 'r')
+	dancerInfo = open(signInFile, 'r',encoding='utf-8')
 	dancerInfoHeaders = ['time', 'audition_number', 
-				'last_name', 'first_name', 'class', 
-				'email', 'num_semesters', 'phone']
+				'first_name', 'last_name', 'class','email', 
+				'num_semesters', 'phone']
 	contactMap = {}
 
 	for i,line in enumerate(dancerInfo):
@@ -97,36 +96,40 @@ def csvToDancers(dancerPrefsFile, signInFile):
 		audition_number = int(column[dancerInfoHeaders.index('audition_number')])
 		email = column[dancerInfoHeaders.index('email')]
 		phone = column[dancerInfoHeaders.index('phone')]
+		# pronouns = column[dancerInfoHeaders.index('pronouns')]
 		contactMap[audition_number] = (email, phone)
 
 	dancerInfo.close()
 
-	dancerRankings = open(dancerPrefsFile, 'r')
-	dancerRankingsHeaders = ['time', 'email', 'first_name', 'last_name', 
-							'audition_number', 'pronouns','num_pieces']
+	dancerRankings = open(dancerPrefsFile, 'r',encoding='utf-8')
+	dancerRankingsHeaders = ['time', 'email', 'audition_number', 'first_name', 'last_name', 
+							'num_pieces']
 	dancerMap = {}
 
 	for i,line in enumerate(dancerRankings):
 		if i == 0: continue
 
 		column = line.strip().split(',')
+		print("column",column)
 		first_name = column[dancerRankingsHeaders.index('first_name')]
 		last_name = column[dancerRankingsHeaders.index('last_name')]
 		audition_number = int(column[dancerRankingsHeaders.index('audition_number')])
-		pronouns = column[dancerRankingsHeaders.index('pronouns')]
-		num_pieces = int(column[dancerRankingsHeaders.index('num_pieces')])
+		num_pieces = int(column[dancerRankingsHeaders.index('num_pieces')]) 
 
-		preferences = column[len(dancerRankingsHeaders):]
-		ranking_tuples = [(piece, int(ranking)) 
-			for piece,ranking in enumerate(preferences) if ranking != ""]
-		sorted_rankings = sorted(ranking_tuples, key=lambda tup: tup[1])
-		piece_rankings = [(str(dance_index+1), ranking) 
-			for (dance_index, ranking) in sorted_rankings]
+		piece_prefs = column[len(dancerRankingsHeaders):]
+		# print("preferences:",piece_prefs)
+		piece_rankings = [(piece, ranking) 
+			for ranking, piece in enumerate(piece_prefs) if piece != ""]
+		# print("piece rankings: ",piece_rankings)
+		# piece_rankings = sorted(ranking_tuples, key=lambda tup: tup[1])
+		# print("sorted rankings: ",piece_rankings)
+		# piece_rankings = [(dance_name, ranking) 
+		# 	for (dance_name, ranking) in sorted_rankings]
 
 		(email, phone) = contactMap.get(audition_number, ('no email', 'no phone'))
 
 		dancerMap[audition_number] = Dancer(first_name, last_name, 
-									audition_number, pronouns, num_pieces, 
+									audition_number, num_pieces, 
 									piece_rankings, email, phone)
 	dancerRankings.close()
 
@@ -146,8 +149,11 @@ def findWorstPiece(dancer):
 	worstRank = 0
 	worstID = None
 
-	for (piece, rank) in dancer.piece_rankings:
-		if piece in dancer.pieces and rank > worstRank:
+	for rank, piece in enumerate(dancer.piece_rankings):
+		# print("rank and piece: ",rank,piece)
+		# print("\n\n",piece,dancer.pieces, piece[0] in dancer.pieces,"\n\n")
+		if piece[0] in dancer.pieces and rank > worstRank:
+			# print("getting here ever????")
 			worstID, worstRank = piece, rank
 	
 	return (worstID, worstRank)
@@ -160,10 +166,18 @@ def findWorstPiece(dancer):
 def checkCanAddDancerToPiece(piece, dancer):
 	# possible piece: (piece, rank)
 	# gets rank of current piece in dancer's rankings
+	# if(piece.piece_id=="E - Caroline"):
+	# 	print(piece,dancer)
+	# if(piece.piece_id=="F - Nina & Lily"):
+	# 	print(piece,dancer)
 	pieceRank = 1000
 	actual_piece = piece.piece_id
 
+	# print("actual piece format:",actual_piece)
+	# print(dancer.piece_rankings)
+
 	for possiblePiece in dancer.piece_rankings:
+		# print("possiblePiece",possiblePiece)
 		if possiblePiece[0] == actual_piece:
 			pieceRank = possiblePiece[1]
 			break
@@ -177,7 +191,9 @@ def checkCanAddDancerToPiece(piece, dancer):
 
 	# dancer is at max number of pieces, checks if they want to drop a piece
 	else:
+		# print("entering else statement")
 		(worstID, worstRank) = findWorstPiece(dancer)
+		# print("worst rank: ",worstRank)
 		if worstRank > pieceRank:
 			# curr piece is higher priority, dancer wants to drop their worst piece
 			return (True, pieceRank, worstID)
@@ -268,7 +284,10 @@ def main():
 
 	while (not checkAllProposed(pieces)):
 		for pieceID in pieces:
+			# print("pieceID: ",pieceID)
 			piece = pieces[pieceID]
+			# print("piece: ",piece)
+			# piece = pieceID
 			while len(piece.dancers) < piece.capacity and len(piece.dancer_rankings) != 0:
 				# propose to dancer
 				dancerID = findDancer(piece)
@@ -296,10 +315,12 @@ def main():
 
 						else:
 							# dancer leaving removedID piece
-							leavingPiece = pieces[removedID]
+							# print("pieces=",pieces)
+							# print("removedID=",removedID)
+							leavingPiece = pieces[removedID[0]]
 
 							# remove rejected piece from dancer's list
-							dancer.pieces.pop(removedID)
+							dancer.pieces.pop(removedID[0])
 
 							# add accepted piece to dancer's list
 							dancer.pieces[piece.piece_id] = pieceRank
@@ -309,6 +330,17 @@ def main():
 
 					# remove curr dancer from proposal list
 					piece.dancer_rankings.pop(dancerID)
+
+	# print(dancers[225].pieces)
+	file = open("dancers.csv","w")
+	for dancer in dancers:
+		file.write(str(dancer))
+		file.write(",")
+		pieces = [str(d) for d in dancers[dancer].pieces]
+		for p in pieces:
+			file.write(p[0])
+			file.write("/")
+		file.write("\n")
 
 	writePieces(pieces)
 	makeAssigned(pieces)
